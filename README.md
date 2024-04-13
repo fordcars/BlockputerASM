@@ -23,6 +23,4 @@ loop:
     MVRA R1    ; Move ACC back to R1 (i)
     SUB R0     ; ACC -= R0 (our loop count)
     GOTON loop ; GOTO loop if ACC < R0
-
-MVAL 15        ; Set ACC to 15 to signify end!
 ```

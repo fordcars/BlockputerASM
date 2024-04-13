@@ -6,4 +6,4 @@ MVRA R1     ; Move R1 to ACC
 SUB ONE     ; Decrement ACC
 MVAR R1     ; Move ACC to R1
 JUMPZ       ; Jump to INSTA if ACC is ZERO
-MVAL 15     ; Set ACC to 15 to signify done! R1 should be -1
+; R1 should be -1
