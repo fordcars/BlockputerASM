@@ -1,0 +1,30 @@
+; Fills memory with the first R0 Fibonacci numbers
+MVAL 10    ; R0
+MVAR R0
+MVRA ONE   ; ACC = 1
+MVAR R1    ; R1 = 1
+MVAR R2    ; R2 = 1
+
+; Loop from 0 to R0
+loop:
+    ; Fibonacci stuff
+    MVRA R1    ; ACC = R1
+    MVAR R3    ; R3 = R1 (tmp)
+    MVRA R2    ; ACC = R2
+    MVAR R1    ; R1 = R2
+    ADD R3     ; ACC = R2 + R3 (tmp)
+    MVAR R2    ; R2 = R2 + R3 (tmp)
+
+    ; Store R1 to memory
+    MVRA R4    ; ACC = R4 (i)
+    MVAR MEMA  ; MEMA = ACC
+    MVRA R1    ; ACC = R1
+    STA        ; M[MEMA] = R1
+
+    ; Loop stuff
+    MVRA R4    ; ACC = R4 (i)
+    ADD ONE    ; ++ACC
+    MVAR R4    ; R4 = ACC
+    SUB R0     ; ACC -= R0
+    GOTON loop ; GOTO loop if ACC < R0
+
