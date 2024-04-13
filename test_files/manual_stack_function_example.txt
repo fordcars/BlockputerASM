@@ -1,6 +1,6 @@
-; This is a demonstration of manually calling a function
+; This is a demonstration of manually calling a function.
 ; Don't do this! Use PUSH, POP and CALL instead.
-; Based off cdecl calling conventions (Caller Clean-Up)
+; Based off cdecl calling conventions (caller cleanup)
 ; We're gonna use R7 as stack pointer
 MVAH 15
 MVAL 15
