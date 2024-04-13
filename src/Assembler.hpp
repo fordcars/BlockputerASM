@@ -24,8 +24,8 @@ enum class OpCode : uint8_t {
 
     // Custom OpCodes
     NOT = 100, // ACC = NOT ACC
-    GOTOZ,     // Goto label if ACC is zero. Modifies R5!
-    GOTON,     // Goto label if ACC is negative. Modifies R5!
+    GOTOZ,     // Goto label if ACC is zero. Modifies R8!
+    GOTON,     // Goto label if ACC is negative. Modifies R8!
     GOTO       // Goto label. Erases ACC!
 };
 
@@ -36,13 +36,16 @@ enum class RegCode : uint8_t {
     R3    = 0b0011,
     R4    = 0b0100,
     R5    = 0b0101,
-    MEMA  = 0b0110,
-    INSTA = 0b0111,
-    ZERO  = 0b1000,
-    ONE   = 0b1001,
-    MIN1  = 0b1010,
-    IR    = 0b1011,
-    PC    = 0b1100
+    R6    = 0b0110,
+    R7    = 0b0111,
+    R8    = 0b1000,
+    OUT   = 0b1001,
+    IN    = 0b1010,
+    MEMA  = 0b1011,
+    INSTA = 0b1100,
+    ZERO  = 0b1101,
+    ONE   = 0b1110,
+    MIN1  = 0b1111
 };
 
 
@@ -55,5 +58,5 @@ private:
     std::vector<std::vector<std::string>> mInstructions;
     std::unordered_map<std::string, int> mLabels;
 
-    std::vector<uint8_t> assembleInstruction(const std::vector<std::string>& inst);
+    std::vector<uint8_t> assembleInstruction(uint8_t instIndex, const std::vector<std::string>& inst);
 };

@@ -9,6 +9,7 @@
 // This shouldn't exist, sorryyyy I'm too lazy
 #define GOTOX_ADDITIONAL_INSTRUCTIONS 5
 #define GOTO_ADDITIONAL_INSTRUCTIONS 4
+#define PC_ADDITIONAL_INSTRUCTIONS 1
 
 namespace {
     std::string binaryInstToString(uint8_t binaryInst) {
@@ -147,6 +148,8 @@ Assembler::Assembler(const std::string& inputPath) {
                     labelTargetNumber += GOTOX_ADDITIONAL_INSTRUCTIONS;
                 else if(inst[0] == "GOTO")
                     labelTargetNumber += GOTO_ADDITIONAL_INSTRUCTIONS;
+                else if(inst[0] == "MVRA" && inst[1] == "PC")
+                    labelTargetNumber += PC_ADDITIONAL_INSTRUCTIONS;
             }
             ++lineNumber;
         }
@@ -161,8 +164,10 @@ void Assembler::assembleTo(const std::string& outputPath, bool addComments) {
         std::cerr << "Error: unable to open file for writing: " << outputPath << std::endl;
     }   
 
-    for(const auto& inst : mInstructions) {
-        std::vector<uint8_t> binaryInstructions = assembleInstruction(inst);
+    for(int i = 0; i < mInstructions.size(); ++i) {
+        std::vector<std::string>& inst = mInstructions[i];
+        std::vector<uint8_t> binaryInstructions
+            = assembleInstruction(static_cast<uint8_t>(i), inst);
         for(int i = 0; i < binaryInstructions.size(); ++i) {
             uint8_t binaryInst = binaryInstructions[i];
             outputFile << binaryInstToString(binaryInst);
@@ -179,7 +184,8 @@ void Assembler::assembleTo(const std::string& outputPath, bool addComments) {
 }
 
 // May return multiple binary instructions
-std::vector<uint8_t> Assembler::assembleInstruction(const std::vector<std::string>& inst) {
+std::vector<uint8_t> Assembler::assembleInstruction(uint8_t instIndex, 
+                                                    const std::vector<std::string>& inst) {
     OpCode op = mnemonicToOpCode(inst[0]);
     bool tooFewOperands = false;
 
@@ -192,7 +198,17 @@ std::vector<uint8_t> Assembler::assembleInstruction(const std::vector<std::strin
     switch(op) {
         case OpCode::MVRA:
             if(inst.size() < 2) { tooFewOperands = true; break; }
-            return { combineOpCodeOperand(op, regStringToRegCode(inst[1])) };
+            if(inst[1] == "PC") {
+                // Helper for getting current PC (useful for function calling, etc)
+                // Don't forget to update PC_ADDITIONAL_INSTRUCTIONS
+                uint8_t currPC = instIndex + 2; // After both emitted instructions
+                return {
+                    combineOpCodeOperand(OpCode::MVAH, currPC >> 4),
+                    combineOpCodeOperand(OpCode::MVAL, currPC),
+                };
+            } else {
+                return { combineOpCodeOperand(op, regStringToRegCode(inst[1])) };
+            }
         case OpCode::MVAR:
             if(inst.size() < 2) { tooFewOperands = true; break; }
             return { combineOpCodeOperand(op, regStringToRegCode(inst[1])) };
@@ -246,8 +262,8 @@ std::vector<uint8_t> Assembler::assembleInstruction(const std::vector<std::strin
 
             // Don't forget to update GOTOX_ADDITIONAL_INSTRUCTIONS
             return {
-                // Temp move ACC to R5
-                combineOpCodeOperand(OpCode::MVAR, RegCode::R5),
+                // Temp move ACC to R8
+                combineOpCodeOperand(OpCode::MVAR, RegCode::R8),
 
                 // Set ACC to label instruction number
                 combineOpCodeOperand(OpCode::MVAH, mLabels.at(inst[1]) >> 4),
@@ -257,7 +273,7 @@ std::vector<uint8_t> Assembler::assembleInstruction(const std::vector<std::strin
                 combineOpCodeOperand(OpCode::MVAR, RegCode::INSTA),
 
                 // Reset ACC
-                combineOpCodeOperand(OpCode::MVRA, RegCode::R5),
+                combineOpCodeOperand(OpCode::MVRA, RegCode::R8),
 
                 // JUMP
                 combineOpCodeOperand(op == OpCode::GOTOZ ? OpCode::JUMPZ : OpCode::JUMPN, 0),
