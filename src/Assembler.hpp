@@ -23,7 +23,7 @@ enum class OpCode : uint8_t {
     XOR   = 0b1000,
 
     // Custom OpCodes
-    NOT = 100, // ACC = NOT ACC
+    NOT = 100, // ACC = ~ACC
 
     // All of these modify ACC:
     GOTOZ,     // Goto label if ACC is zero. Modifies R8!

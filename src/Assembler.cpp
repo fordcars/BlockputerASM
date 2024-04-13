@@ -7,12 +7,12 @@
 #define LABEL_CHAR ':'
 
 // This shouldn't exist, sorryyyy I'm too lazy
-#define GOTOX_ADDITIONAL_INSTRUCTIONS 5
-#define GOTO_ADDITIONAL_INSTRUCTIONS 4
-#define PUSH_ADDITIONAL_INSTRUCTIONS 5
-#define POP_ADDITIONAL_INSTRUCTIONS 5
-#define CALL_ADDITIONAL_INSTRUCTIONS 11
-#define PC_ADDITIONAL_INSTRUCTIONS 1
+#define GOTOX_INSTRUCTIONS 6
+#define GOTO_INSTRUCTIONS 5
+#define PUSH_INSTRUCTIONS 6
+#define POP_INSTRUCTIONS 6
+#define CALL_INSTRUCTIONS 12
+#define PC_INSTRUCTIONS 2
 
 namespace {
     std::string binaryInstToString(uint8_t binaryInst) {
@@ -159,22 +159,23 @@ Assembler::Assembler(const std::string& inputPath) {
             }
 
             if(!inst.empty()) {
-                ++labelTargetNumber;
                 mInstructions.emplace_back(inst);
 
                 // Bad!
                 if(inst[0] == "GOTOZ" || inst[0] == "GOTON")
-                    labelTargetNumber += GOTOX_ADDITIONAL_INSTRUCTIONS;
+                    labelTargetNumber += GOTOX_INSTRUCTIONS;
                 else if(inst[0] == "GOTO")
-                    labelTargetNumber += GOTO_ADDITIONAL_INSTRUCTIONS;
+                    labelTargetNumber += GOTO_INSTRUCTIONS;
                 else if(inst[0] == "PUSH")
-                    labelTargetNumber += PUSH_ADDITIONAL_INSTRUCTIONS;
+                    labelTargetNumber += PUSH_INSTRUCTIONS;
                 else if(inst[0] == "POP")
-                    labelTargetNumber += POP_ADDITIONAL_INSTRUCTIONS;
+                    labelTargetNumber += POP_INSTRUCTIONS;
                 else if(inst[0] == "CALL")
-                    labelTargetNumber += CALL_ADDITIONAL_INSTRUCTIONS;
+                    labelTargetNumber += CALL_INSTRUCTIONS;
                 else if(inst[0] == "MVRA" && inst[1] == "PC")
-                    labelTargetNumber += PC_ADDITIONAL_INSTRUCTIONS;
+                    labelTargetNumber += PC_INSTRUCTIONS;
+                else
+                    ++labelTargetNumber;
             }
             ++lineNumber;
         }
@@ -228,7 +229,7 @@ std::vector<uint8_t> Assembler::assembleInstruction(uint8_t instIndex,
             if(inst.size() < 2) { tooFewOperands = true; break; }
             if(inst[1] == "PC") {
                 // Helper for getting current PC (useful for function calling, etc)
-                // Don't forget to update PC_ADDITIONAL_INSTRUCTIONS
+                // Don't forget to update PC_INSTRUCTIONS
                 uint8_t currPC = instIndex + 2; // After both emitted instructions
                 return {
                     combineOpCodeOperand(OpCode::MVAH, currPC >> 4),
@@ -288,7 +289,7 @@ std::vector<uint8_t> Assembler::assembleInstruction(uint8_t instIndex,
                 return {};
             }
 
-            // Don't forget to update GOTOX_ADDITIONAL_INSTRUCTIONS
+            // Don't forget to update GOTOX_INSTRUCTIONS
             return {
                 // Temp move ACC to R8
                 combineOpCodeOperand(OpCode::MVAR, RegCode::R8),
@@ -314,7 +315,7 @@ std::vector<uint8_t> Assembler::assembleInstruction(uint8_t instIndex,
                 return {};
             }
 
-            // Don't forget to update GOTO_ADDITIONAL_INSTRUCTIONS
+            // Don't forget to update GOTO_INSTRUCTIONS
             return {
                 // Set ACC to label instruction number
                 combineOpCodeOperand(OpCode::MVAH, mLabels.at(inst[1]) >> 4),
@@ -332,7 +333,7 @@ std::vector<uint8_t> Assembler::assembleInstruction(uint8_t instIndex,
         case OpCode::PUSH:
             if(inst.size() < 2) { tooFewOperands = true; break; }
 
-            // Don't forget to update PUSH_ADDITIONAL_INSTRUCTIONS
+            // Don't forget to update PUSH_INSTRUCTIONS
             return {
                 // Set ACC to R7 (SP) and allocate one byte
                 combineOpCodeOperand(OpCode::MVRA, RegCode::R7),
@@ -351,7 +352,7 @@ std::vector<uint8_t> Assembler::assembleInstruction(uint8_t instIndex,
         case OpCode::POP:
             if(inst.size() < 2) { tooFewOperands = true; break; }
 
-            // Don't forget to update POP_ADDITIONAL_INSTRUCTIONS
+            // Don't forget to update POP_INSTRUCTIONS
             return {
                 // Set MEMA to R7 (SP)
                 combineOpCodeOperand(OpCode::MVRA, RegCode::R7),
@@ -376,9 +377,9 @@ std::vector<uint8_t> Assembler::assembleInstruction(uint8_t instIndex,
             }
 
             // Return addr is immediately after emitted instructions
-            uint8_t returnAddr = instIndex + CALL_ADDITIONAL_INSTRUCTIONS + 1;
+            uint8_t returnAddr = instIndex + CALL_INSTRUCTIONS;
 
-            // Don't forget to update CALL_ADDITIONAL_INSTRUCTIONS
+            // Don't forget to update CALL_INSTRUCTIONS
             return {
                 // Set ACC to R7 (SP) and allocate one byte
                 combineOpCodeOperand(OpCode::MVRA, RegCode::R7),
