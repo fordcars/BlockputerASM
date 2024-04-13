@@ -1,0 +1,8 @@
+MVAL 10
+MVAR MEMA
+MVAL 5
+STA        ; Store value 5 at M[10]
+MVRA ZERO  ; Clear ACC
+LDA        ; ACC = M[10]
+MVAR R0    ; Move ACC to R0
+; R0 should now be equal to 5
