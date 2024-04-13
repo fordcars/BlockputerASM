@@ -1,0 +1,100 @@
+; This is a demonstration of manually calling a function
+; Don't do this! Use PUSH, POP and CALL instead.
+; Based off cdecl calling conventions (Caller Clean-Up)
+; We're gonna use R7 as stack pointer
+MVAH 15
+MVAL 15
+MVAR R7         ; R7 = 255 (bottom-growing stack)
+
+; Push local vars to stack here
+
+; Push arguments to stack
+; In reality, you would probably use R0-R6 instead,
+; and use the stack if you have more additional arguments.
+MVRA R7         ; ACC = SP
+SUB ONE         ; Allocate one byte on stack
+MVAR R7         ; --SP
+MVAR MEMA       ; MEMA = SP
+MVAH 0
+MVAL 3          ; ACC = 3 = y
+STA             ; M[SP] = 3
+
+MVRA R7         ; ACC = SP
+SUB ONE         ; Allocate another byte on stack
+MVAR R7         ; --SP
+MVAR MEMA       ; MEMA = SP
+MVAH 0
+MVAL 8          ; ACC = 8 = x
+STA             ; M[SP] = 8
+
+; Add 7 to the return address, since the GOTO statement will add
+; additional instructions.
+MVAL 7
+MVAR R0         ; R0 = 7 (tmp)
+
+MVRA R7         ; ACC = SP
+SUB ONE         ; Allocate another byte on stack
+MVAR R7         ; --SP
+MVAR MEMA       ; MEMA = SP
+MVRA PC         ; ACC = PC (return address)
+ADD R0          ; Add tmp to PC (return address is after entry sequence)
+STA             ; M[SP] = return address
+
+GOTO min        ; GOTO min(x, y)
+
+; Unwind stack
+MVRA R7         ; ACC = SP
+ADD ONE
+ADD ONE
+ADD ONE
+MVAR R7         ; SP += 3
+
+; R0 has result
+GOTO end
+
+; min(x, y) function
+; Returns the minimum of two values (R0)
+min:
+    MVRA R7     ; ACC = SP
+    MVAR MEMA   ; MEMA = SP
+    LDA         ; ACC = return addr
+    MVAR R3     ; R3 = return addr
+
+    MVRA R7     ; ACC = SP
+    ADD ONE     ; ACC = SP + 1
+    MVAR MEMA   ; MEMA = SP + 1
+    LDA         ; ACC = 1st arg
+    MVAR R1     ; R1 = 1st arg
+
+    MVRA R7     ; ACC = SP
+    ADD ONE     ; ACC = SP + 1
+    ADD ONE     ; ACC = SP + 2
+    MVAR MEMA   ; MEMA = SP + 2
+    LDA         ; ACC = 2nd arg
+    MVAR R2     ; R2 = 2nd arg
+
+    ; Find min
+    SUB R1     ; ACC = R2 - R1
+    GOTON r1GreaterR2
+
+    ; R2 is greater or equal to R1, return R1
+    MVRA R1
+    MVAR R0
+    GOTO return
+
+    r1GreaterR2:
+        ; R1 is greater than R2, return R2
+        MVRA R2
+        MVAR R0
+
+    return:
+        ; R0 is set to return values
+        MVRA R3      ; ACC = R3 (return addr)
+        MVAR INSTA   ; INSTA = R3 (return addr)
+        MVRA ZERO    ; Clear ACC
+        JUMPZ        ; Jump to return addr
+
+end:
+    ; R0 has result
+    MVRA R0
+    MVAR OUT

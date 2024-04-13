@@ -24,9 +24,14 @@ enum class OpCode : uint8_t {
 
     // Custom OpCodes
     NOT = 100, // ACC = NOT ACC
+
+    // All of these modify ACC:
     GOTOZ,     // Goto label if ACC is zero. Modifies R8!
     GOTON,     // Goto label if ACC is negative. Modifies R8!
-    GOTO       // Goto label. Erases ACC!
+    GOTO,      // Goto label.
+    PUSH,      // Pushes register to stack. Uses R7 as SP!
+    POP,       // Pops register from stack. Uses R7 as SP!
+    CALL,      // Pushes return addr to stack and gotos label. Uses R7 as SP!
 };
 
 enum class RegCode : uint8_t {

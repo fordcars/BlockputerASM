@@ -9,6 +9,9 @@
 // This shouldn't exist, sorryyyy I'm too lazy
 #define GOTOX_ADDITIONAL_INSTRUCTIONS 5
 #define GOTO_ADDITIONAL_INSTRUCTIONS 4
+#define PUSH_ADDITIONAL_INSTRUCTIONS 5
+#define POP_ADDITIONAL_INSTRUCTIONS 5
+#define CALL_ADDITIONAL_INSTRUCTIONS 11
 #define PC_ADDITIONAL_INSTRUCTIONS 1
 
 namespace {
@@ -63,6 +66,12 @@ namespace {
             return OpCode::GOTON;
         } else if(mnemonic == "GOTO") {
             return OpCode::GOTO;
+        } else if(mnemonic == "PUSH") {
+            return OpCode::PUSH;
+        } else if(mnemonic == "POP") {
+            return OpCode::POP;
+        } else if(mnemonic == "CALL") {
+            return OpCode::CALL;
         }
 
         std::cerr << "Error: unrecognized mnemonic '" << mnemonic << "'."
@@ -83,6 +92,16 @@ namespace {
             return RegCode::R4;
         } else if(regString == "R5") {
             return RegCode::R5;
+        } else if(regString == "R6") {
+            return RegCode::R6;
+        } else if(regString == "R7") {
+            return RegCode::R7;
+        } else if(regString == "R8") {
+            return RegCode::R8;
+        } else if(regString == "OUT") {
+            return RegCode::OUT;
+        } else if(regString == "IN") {
+            return RegCode::IN;
         } else if(regString == "MEMA") {
             return RegCode::MEMA;
         } else if(regString == "INSTA") {
@@ -148,6 +167,12 @@ Assembler::Assembler(const std::string& inputPath) {
                     labelTargetNumber += GOTOX_ADDITIONAL_INSTRUCTIONS;
                 else if(inst[0] == "GOTO")
                     labelTargetNumber += GOTO_ADDITIONAL_INSTRUCTIONS;
+                else if(inst[0] == "PUSH")
+                    labelTargetNumber += PUSH_ADDITIONAL_INSTRUCTIONS;
+                else if(inst[0] == "POP")
+                    labelTargetNumber += POP_ADDITIONAL_INSTRUCTIONS;
+                else if(inst[0] == "CALL")
+                    labelTargetNumber += CALL_ADDITIONAL_INSTRUCTIONS;
                 else if(inst[0] == "MVRA" && inst[1] == "PC")
                     labelTargetNumber += PC_ADDITIONAL_INSTRUCTIONS;
             }
@@ -164,10 +189,13 @@ void Assembler::assembleTo(const std::string& outputPath, bool addComments) {
         std::cerr << "Error: unable to open file for writing: " << outputPath << std::endl;
     }   
 
+    int indexOffset = 0;
     for(int i = 0; i < mInstructions.size(); ++i) {
         std::vector<std::string>& inst = mInstructions[i];
         std::vector<uint8_t> binaryInstructions
-            = assembleInstruction(static_cast<uint8_t>(i), inst);
+            = assembleInstruction(static_cast<uint8_t>(i + indexOffset), inst);
+        indexOffset += binaryInstructions.size() - 1;
+
         for(int i = 0; i < binaryInstructions.size(); ++i) {
             uint8_t binaryInst = binaryInstructions[i];
             outputFile << binaryInstToString(binaryInst);
@@ -298,9 +326,90 @@ std::vector<uint8_t> Assembler::assembleInstruction(uint8_t instIndex,
                 // Clear ACC
                 combineOpCodeOperand(OpCode::MVRA, RegCode::ZERO),
 
-                // JUMP
+                // Jump
                 combineOpCodeOperand(OpCode::JUMPZ, 0),
             };
+        case OpCode::PUSH:
+            if(inst.size() < 2) { tooFewOperands = true; break; }
+
+            // Don't forget to update PUSH_ADDITIONAL_INSTRUCTIONS
+            return {
+                // Set ACC to R7 (SP) and allocate one byte
+                combineOpCodeOperand(OpCode::MVRA, RegCode::R7),
+                combineOpCodeOperand(OpCode::SUB, RegCode::ONE),
+                combineOpCodeOperand(OpCode::MVAR, RegCode::R7),
+
+                // Set MEMA to new SP
+                combineOpCodeOperand(OpCode::MVAR, RegCode::MEMA),
+
+                // Set ACC to register to push
+                combineOpCodeOperand(OpCode::MVRA, regStringToRegCode(inst[1])),
+
+                // Store register in M[SP]
+                combineOpCodeOperand(OpCode::STA, 0),
+            };
+        case OpCode::POP:
+            if(inst.size() < 2) { tooFewOperands = true; break; }
+
+            // Don't forget to update POP_ADDITIONAL_INSTRUCTIONS
+            return {
+                // Set MEMA to R7 (SP)
+                combineOpCodeOperand(OpCode::MVRA, RegCode::R7),
+                combineOpCodeOperand(OpCode::MVAR, RegCode::MEMA),
+
+                // Deallocate one byte from stack
+                combineOpCodeOperand(OpCode::ADD, RegCode::ONE),
+                combineOpCodeOperand(OpCode::MVAR, RegCode::R7),
+
+                // Set ACC = M[MEMA]
+                combineOpCodeOperand(OpCode::LDA, 0),
+
+                // Set specified register to ACC
+                combineOpCodeOperand(OpCode::MVAR, regStringToRegCode(inst[1]))
+            };
+        case OpCode::CALL: {
+            if(inst.size() < 2) { tooFewOperands = true; break; }
+            if(mLabels.find(inst[1]) == mLabels.end()) {
+                std::cerr << "Error: cannot find label '" << inst[1] << "'."
+                    << std::endl;
+                return {};
+            }
+
+            // Return addr is immediately after emitted instructions
+            uint8_t returnAddr = instIndex + CALL_ADDITIONAL_INSTRUCTIONS + 1;
+
+            // Don't forget to update CALL_ADDITIONAL_INSTRUCTIONS
+            return {
+                // Set ACC to R7 (SP) and allocate one byte
+                combineOpCodeOperand(OpCode::MVRA, RegCode::R7),
+                combineOpCodeOperand(OpCode::SUB, RegCode::ONE),
+                combineOpCodeOperand(OpCode::MVAR, RegCode::R7),
+
+                // Set MEMA to new SP
+                combineOpCodeOperand(OpCode::MVAR, RegCode::MEMA),
+
+                // Set ACC to return addr
+                combineOpCodeOperand(OpCode::MVAH, returnAddr >> 4),
+                combineOpCodeOperand(OpCode::MVAL, returnAddr),
+
+                // Store return addr in M[SP]
+                combineOpCodeOperand(OpCode::STA, 0),
+
+                // Jump to label
+                // Set ACC to label instruction number
+                combineOpCodeOperand(OpCode::MVAH, mLabels.at(inst[1]) >> 4),
+                combineOpCodeOperand(OpCode::MVAL, mLabels.at(inst[1])),
+
+                // Move ACC to INSTA
+                combineOpCodeOperand(OpCode::MVAR, RegCode::INSTA),
+
+                // Clear ACC
+                combineOpCodeOperand(OpCode::MVRA, RegCode::ZERO),
+
+                // JUMP
+                combineOpCodeOperand(OpCode::JUMPZ, 0)
+            };
+        }
     }
 
     if(tooFewOperands) {

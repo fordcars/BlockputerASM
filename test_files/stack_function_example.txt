@@ -1,0 +1,57 @@
+; Callee cleanup
+; We're gonna use R7 as stack pointer
+MVAH 15
+MVAL 15
+MVAR R7         ; R7 = 255 (bottom-growing stack)
+MVRA ZERO       ; Clear ACC
+
+MVAL 3
+MVAR R0         ; Set X value
+
+MVAL 8
+MVAR R1         ; Set Y value
+
+; Push arguments to stack
+; In reality, you would probably use R0-R6 instead,
+; and use the stack if you have more additional arguments.
+PUSH R1
+PUSH R0
+CALL min
+
+; Stack unwinded by callee
+
+; R0 has result
+GOTO end
+
+; min(x, y) function
+; Returns the minimum of two values (R0)
+min:
+    POP R3      ; R3 = return addr
+    POP R1      ; R1 = 1st arg
+    POP R2      ; R2 = 2nd arg
+
+    ; Find min
+    SUB R1     ; ACC = R2 - R1
+    GOTON r1GreaterR2
+
+    ; R2 is greater or equal to R1, return R1
+    MVRA R1
+    MVAR R0
+    GOTO return
+
+    r1GreaterR2:
+        ; R1 is greater than R2, return R2
+        MVRA R2
+        MVAR R0
+
+    return:
+        ; R0 is set to return values
+        MVRA R3      ; ACC = R3 (return addr)
+        MVAR INSTA   ; INSTA = R3 (return addr)
+        MVRA ZERO    ; Clear ACC
+        JUMPZ        ; Jump to return addr
+
+end:
+    ; R0 has result
+    MVRA R0
+    MVAR OUT
