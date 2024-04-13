@@ -1,0 +1,6 @@
+MVAL 10     ; ACC = 10
+MVAR R1     ; R1 = 10
+GOTO end
+MVRA ZERO   ; ACC = 0
+MVAR R1     ; Clear R1
+end:

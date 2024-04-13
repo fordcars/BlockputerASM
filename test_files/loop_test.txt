@@ -1,14 +1,3 @@
-# BlockputerASM
-## Building:
-```
-mkdir build
-cd build
-cmake ..
-make # Or build in Microsoft Visual Studio, etc.
-```
-
-## Example
-```asm
 ; Iterate from 0 to R0
 ; R0: loop count
 ; R1: current iteration (i)
@@ -25,4 +14,3 @@ loop:
     GOTON loop ; GOTO loop if ACC < R0
 
 MVAL 15        ; Set ACC to 15 to signify end!
-```

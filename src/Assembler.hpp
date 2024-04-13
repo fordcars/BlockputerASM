@@ -4,7 +4,7 @@
 #include <vector>
 #include <unordered_map>
 
-enum class OP_CODE : uint8_t {
+enum class OpCode : uint8_t {
     MVRA  = 0b0000,
     MVAR  = 0b0001,
     LDA   = 0b0011,
@@ -20,10 +20,16 @@ enum class OP_CODE : uint8_t {
     LRS   = 0b1010,
     AND   = 0b1011,
     OR    = 0b1001,
-    XOR   = 0b1000
+    XOR   = 0b1000,
+
+    // Custom OpCodes
+    NOT = 100, // ACC = NOT ACC
+    GOTOZ,     // Goto label if ACC is zero. Modifies R5!
+    GOTON,     // Goto label if ACC is negative. Modifies R5!
+    GOTO       // Goto label. Erases ACC!
 };
 
-enum class REG_CODE : uint8_t {
+enum class RegCode : uint8_t {
     R0    = 0b0000,
     R1    = 0b0001,
     R2    = 0b0010,
@@ -43,9 +49,11 @@ enum class REG_CODE : uint8_t {
 class Assembler {
 public:
     Assembler(const std::string& inputPath);
-    void assembleTo(const std::string& outputPath);
+    void assembleTo(const std::string& outputPath, bool addComments);
 
 private:
     std::vector<std::vector<std::string>> mInstructions;
     std::unordered_map<std::string, int> mLabels;
+
+    std::vector<uint8_t> assembleInstruction(const std::vector<std::string>& inst);
 };
