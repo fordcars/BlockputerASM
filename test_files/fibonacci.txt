@@ -1,8 +1,9 @@
 ; Fills memory with the first R0 Fibonacci numbers
 MVAL 10    ; R0
 MVAR R0
+MVRA ZERO  ; Clear ACC
+MVAR R1    ; R1 = 0
 MVRA ONE   ; ACC = 1
-MVAR R1    ; R1 = 1
 MVAR R2    ; R2 = 1
 
 ; Loop from 0 to R0
