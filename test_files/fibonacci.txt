@@ -1,6 +1,7 @@
-; Fills memory with the first R0 Fibonacci numbers
-MVAL 10    ; R0
-MVAR R0
+; Fills memory with the specified number of Fibonacci numbers
+MVRA IN
+MVAR R0    ; R0 = user input
+
 MVRA ZERO  ; Clear ACC
 MVAR R1    ; R1 = 0
 MVRA ONE   ; ACC = 1

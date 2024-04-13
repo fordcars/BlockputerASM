@@ -1,0 +1,8 @@
+; User input test using IN register
+; Multiplies 2 user inputted values
+MVRA IN      ; Get first values
+MVAR R0
+MVRA IN      ; Get second values
+MVAR R1
+MUL R0
+MVAR OUT     ; Write to OUT
