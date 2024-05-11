@@ -1,4 +1,4 @@
-; Calculates and outputs specified Fibonacci number
+; Fills memory with the specified number of Fibonacci numbers
 MVRA IN
 MVAR R0    ; R0 = user input
 
@@ -17,9 +17,11 @@ loop:
     ADD R3     ; ACC = R2 + R3 (tmp)
     MVAR R2    ; R2 = R2 + R3 (tmp)
 
-    ; Output R1
+    ; Store R1 to memory
+    MVRA R4    ; ACC = R4 (i)
+    MVAR MEMA  ; MEMA = ACC
     MVRA R1    ; ACC = R1
-    MVAR OUT   ; Output temporary result
+    STA        ; M[MEMA] = R1
 
     ; Loop stuff
     MVRA R4    ; ACC = R4 (i)
