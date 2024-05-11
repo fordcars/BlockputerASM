@@ -53,7 +53,6 @@ enum class RegCode : uint8_t {
     MIN1  = 0b1111
 };
 
-
 class Assembler {
 public:
     Assembler(const std::string& inputPath);
